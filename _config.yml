@@ -1,0 +1,4 @@
+# GitHub Pages: keep dev-only files off the live site.
+exclude:
+  - CLAUDE.md
+  - scripts
