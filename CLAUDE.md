@@ -10,8 +10,8 @@ Personal portfolio of Jomiloju Obafunmi, full-stack web developer. Plain HTML, C
 
 ## Where things live
 - `index.html` — all sections: hero, work, services, about, contact
-- `styles.css` — black and red theme, mobile layout
-- `script.js` — nav toggle, reveal-on-scroll, copy-email, rotating/typed text, counters, marquee
+- `styles.css` — design tokens at the top; mobile rules at the bottom
+- `script.js` — copy-email button and footer year only
 - `assets/` — project screenshots (webp) and `og.png` social image
 - `Jomiloju_Obafunmi_CV.pdf` — CV download; replace with the latest CV from Downloads when it changes
 - `scripts/check.js` — the site check; `_config.yml` keeps it and this file off the live site
@@ -20,6 +20,12 @@ Personal portfolio of Jomiloju Obafunmi, full-stack web developer. Plain HTML, C
 - Never show Needle & Knead. Projects shown: DDUROGA, Agro Alliance, TallyBI, AppBank.
 - Contact is email only. No phone number anywhere, even though the CV has one.
 - Keep the black and red look.
+
+## Design (redesigned 2026-11-14 with the frontend-design plugin)
+- Palette: black #000, white #fff, signal red #f01e0a, grey #8c8c8c, graphite #1f1f1f. Black text on the red passes contrast; white small text on red does not.
+- One font: Archivo. Headings and the email use the condensed width (font-stretch 62%), extra bold, uppercase.
+- The red contact block is the one loud element. Keep everything else quiet: no glows, tilts, fade-ins, ALL-CAPS labels, numbered markers or tech marquees.
+- One motion moment only: the headline reveal on load (off for reduced motion).
 
 ## Pitfalls
 - Headless Chrome can't go narrower than about 500px; check phone width by loading the page in a 390px iframe.

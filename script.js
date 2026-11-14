@@ -1,148 +1,126 @@
-// Mobile menu
-const toggle = document.querySelector('.nav-toggle');
-const nav = document.querySelector('.site-nav');
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canHover = window.matchMedia('(hover: hover)').matches;
 
-function closeNav() {
-  nav.classList.remove('open');
-  toggle.setAttribute('aria-expanded', 'false');
-}
-
-toggle.addEventListener('click', () => {
-  const open = nav.classList.toggle('open');
-  toggle.setAttribute('aria-expanded', String(open));
-});
-nav.addEventListener('click', (e) => {
-  if (e.target.closest('a')) closeNav();
-});
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeNav();
-});
-
-// Reveal sections as they scroll into view
-const revealEls = document.querySelectorAll('.reveal');
-if ('IntersectionObserver' in window) {
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('in');
-        io.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.12 });
-  revealEls.forEach((el) => io.observe(el));
-} else {
-  revealEls.forEach((el) => el.classList.add('in'));
-}
-
-// Copy email address
+// Copy email address, with a visible "Copied" state on the button
 const copyBtn = document.getElementById('copy-email');
+const copyStatus = document.getElementById('copy-status');
+const copyLabel = copyBtn.textContent;
 copyBtn.addEventListener('click', async () => {
-  const label = copyBtn.textContent;
   try {
     await navigator.clipboard.writeText(copyBtn.dataset.email);
-    copyBtn.textContent = 'Copied';
+    copyBtn.textContent = 'Copied ✓';
+    copyBtn.classList.add('done');
+    copyStatus.textContent = 'Email address copied.';
   } catch {
-    window.location.href = 'mailto:' + copyBtn.dataset.email;
-    return;
+    copyStatus.textContent = "Couldn't copy. Select the address above instead.";
   }
-  setTimeout(() => { copyBtn.textContent = label; }, 2000);
+  setTimeout(() => {
+    copyBtn.textContent = copyLabel;
+    copyBtn.classList.remove('done');
+    copyStatus.textContent = '';
+  }, 2200);
 });
 
 // Footer year
 document.getElementById('year').textContent = new Date().getFullYear();
 
-// ---------- Creative layer ----------
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-
-// Scroll progress bar
-const progress = document.querySelector('.progress');
-function updateProgress() {
-  const max = document.documentElement.scrollHeight - window.innerHeight;
-  progress.style.transform = 'scaleX(' + (max > 0 ? window.scrollY / max : 0) + ')';
-}
-window.addEventListener('scroll', updateProgress, { passive: true });
-updateProgress();
-
-// Rotating headline word
-const rotate = document.getElementById('rotate');
-const words = ['websites', 'web apps', 'dashboards', 'back ends'];
-if (!reduceMotion) {
-  let w = 0;
-  setInterval(() => {
-    rotate.classList.add('out');
-    setTimeout(() => {
-      w = (w + 1) % words.length;
-      rotate.textContent = words[w];
-      rotate.classList.remove('out');
-    }, 300);
-  }, 2400);
-}
-
-// Type the code window out, keeping its colours
-const typed = document.getElementById('typed');
-if (!reduceMotion) {
-  typed.parentElement.style.minHeight = typed.parentElement.offsetHeight + 'px';
-  const walker = document.createTreeWalker(typed, NodeFilter.SHOW_TEXT);
-  const nodes = [];
-  while (walker.nextNode()) nodes.push({ node: walker.currentNode, text: walker.currentNode.textContent });
-  nodes.forEach((n) => { n.node.textContent = ''; });
-  let ni = 0;
-  let ci = 0;
-  const timer = setInterval(() => {
-    if (ni >= nodes.length) { clearInterval(timer); return; }
-    ci += 1;
-    nodes[ni].node.textContent = nodes[ni].text.slice(0, ci);
-    if (ci >= nodes[ni].text.length) { ni += 1; ci = 0; }
-  }, 16);
-}
-
-// Count the hero figures up
-function showCount(el, value) {
-  el.textContent = (el.dataset.prefix || '') + Math.round(value).toLocaleString('en-US') + (el.dataset.suffix || '');
-}
-if (!reduceMotion && 'IntersectionObserver' in window) {
-  const counter = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      const el = entry.target;
-      counter.unobserve(el);
-      const target = Number(el.dataset.count);
-      const start = performance.now();
-      const step = (now) => {
-        const t = Math.min((now - start) / 1400, 1);
-        showCount(el, target * (1 - Math.pow(1 - t, 3)));
-        if (t < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
-    });
+// Phones: no hover, so play the DDUROGA scroll and project effects as they come into view
+if (!canHover && !reduceMotion && 'IntersectionObserver' in window) {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => e.target.classList.toggle('in-view', e.isIntersecting));
   }, { threshold: 0.6 });
-  document.querySelectorAll('[data-count]').forEach((el) => counter.observe(el));
+  document.querySelectorAll('.feature-shot, .feature, .project').forEach((el) => io.observe(el));
 }
 
-// Marquee: duplicate the items so the loop is seamless
-const track = document.querySelector('.marquee-track');
-track.innerHTML += track.innerHTML;
+// Headline: letters near the pointer widen (the font can change width smoothly).
+// On phones, a wave runs across the headline after it appears, and again as you scroll.
+const wave = document.querySelector('.hero h1.wave');
+if (wave && !reduceMotion) {
+  const MIN = 62;
+  const MAX = 115;
+  const chars = [];
+  wave.querySelectorAll('.line').forEach((line) => {
+    const text = line.textContent;
+    line.textContent = '';
+    for (const ch of text) {
+      if (ch === ' ') { line.append(' '); continue; }
+      const span = document.createElement('span');
+      span.className = 'ch';
+      span.textContent = ch;
+      line.append(span);
+      chars.push(span);
+    }
+  });
 
-// Cursor glow and 3D tilt on project cards (mouse only)
-if (finePointer) {
-  document.querySelectorAll('.glow').forEach((el) => {
-    el.addEventListener('mousemove', (e) => {
-      const r = el.getBoundingClientRect();
-      const x = e.clientX - r.left;
-      const y = e.clientY - r.top;
-      el.style.setProperty('--mx', x + 'px');
-      el.style.setProperty('--my', y + 'px');
-      if (el.classList.contains('tilt') && !reduceMotion) {
-        const rx = (0.5 - y / r.height) * 7;
-        const ry = (x / r.width - 0.5) * 7;
-        el.style.transition = 'transform 0.1s, border-color 0.25s';
-        el.style.transform = 'perspective(900px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg)';
-      }
+  let centers = [];
+  let radius = 200;
+  const reset = () => chars.forEach((c) => { c.style.fontStretch = ''; });
+  const measure = () => {
+    reset();
+    radius = parseFloat(getComputedStyle(wave).fontSize) * 2.4;
+    centers = chars.map((c) => {
+      const r = c.getBoundingClientRect();
+      return { x: r.left + r.width / 2 + window.scrollX, y: r.top + r.height / 2 + window.scrollY };
     });
-    el.addEventListener('mouseleave', () => {
-      el.style.transition = '';
-      el.style.transform = '';
+  };
+  const apply = (x, y) => {
+    chars.forEach((c, i) => {
+      const d = Math.hypot(centers[i].x - x, centers[i].y - y);
+      const f = Math.max(0, 1 - d / radius);
+      c.style.fontStretch = `${MIN + (MAX - MIN) * f * f}%`;
     });
+  };
+
+  let frame = 0;
+  const queue = (x, y) => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => apply(x, y));
+  };
+
+  // A point that travels along the lines, left to right, top to bottom (p goes 0 to 1)
+  const along = (p) => {
+    const first = centers[0];
+    const last = centers[centers.length - 1];
+    const lines = wave.querySelectorAll('.line').length;
+    const lineIndex = Math.min(lines - 1, Math.floor(p * lines));
+    const inLine = p * lines - lineIndex;
+    const box = wave.getBoundingClientRect();
+    return {
+      x: box.left + window.scrollX + inLine * box.width * 0.9,
+      y: first.y + (last.y - first.y) * (lineIndex / Math.max(1, lines - 1)),
+    };
+  };
+
+  const ready = document.fonts ? document.fonts.ready : Promise.resolve();
+  ready.then(() => {
+    setTimeout(measure, 950); // after the reveal animation
+    let resizeTimer = 0;
+    window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(measure, 200); });
+
+    if (canHover) {
+      const hero = document.querySelector('.hero');
+      hero.addEventListener('pointermove', (e) => { if (centers.length) queue(e.pageX, e.pageY); });
+      hero.addEventListener('pointerleave', () => { cancelAnimationFrame(frame); reset(); });
+    } else {
+      // One sweep after load, then follow the scroll through the hero
+      setTimeout(() => {
+        const start = performance.now();
+        const step = (now) => {
+          const p = Math.min(1, (now - start) / 1800);
+          const pt = along(p);
+          apply(pt.x, pt.y);
+          if (p < 1) requestAnimationFrame(step); else reset();
+        };
+        requestAnimationFrame(step);
+      }, 1100);
+      window.addEventListener('scroll', () => {
+        if (!centers.length) return;
+        const end = wave.getBoundingClientRect().bottom + window.scrollY;
+        const p = window.scrollY / end;
+        if (p <= 0.02 || p >= 1) { reset(); return; }
+        const pt = along(p);
+        queue(pt.x, pt.y);
+      }, { passive: true });
+    }
   });
 }
